@@ -22,31 +22,38 @@ public class StateCensusAnalyser {
 	}
 
 	/**
-	 * @return the number of data read from file
-	 * Reads the csv file and maps to CsvStateCensus class.
+	 * 
+	 * @param className= Name of the class to which we wanna map csv file data to.
+	 * @return number of data read from csv file
 	 * 
 	 */
-	public int readStateRecord() throws MyException {
+	public <T> int readStateRecord(Class<T> className) throws MyException {
 		int count = 0;
 		try {
 			Reader reader = Files.newBufferedReader(Paths.get(SAMPLE_CSV_FILE_PATH));
 			@SuppressWarnings("unchecked")
-			CsvToBean<CsvStateCensus> csvToBean = new CsvToBeanBuilder(reader).withType(CsvStateCensus.class)
-					.withIgnoreLeadingWhiteSpace(true).build();
-			Iterator<CsvStateCensus> csvUserIterator = csvToBean.iterator();
+			CsvToBean<T> csvToBean = new CsvToBeanBuilder(reader).withType(className).withIgnoreLeadingWhiteSpace(true)
+					.build();
+			Iterator<T> csvUserIterator = csvToBean.iterator();
 			while (csvUserIterator.hasNext()) {
-				CsvStateCensus state = csvUserIterator.next();
+				T state = csvUserIterator.next();
 				count++;
-//                if(state instanceof CsvStateCensus) {
-//                	if(((CsvStateCensus)state).getState()==null || ((CsvStateCensus)state).getPopulation()==null || ((CsvStateCensus)state).getAreaInSqKm()==null) {
-//                		
-//                		throw new MyException(MyException.ExceptionType.INCORRECT_HEADER,"Header problem");
-//                	}
-//                }
+				if (state instanceof CsvStateCensus) { // comparing if read file is of CsvStateCensus class
+					if (((CsvStateCensus) state).getState() == null || ((CsvStateCensus) state).getPopulation() == 0
+							|| ((CsvStateCensus) state).getAreaInSqKm() == 0) {
 
-				if (state.getState() == null || state.getPopulation() == 0 || state.getAreaInSqKm() == 0) {
-					throw new MyException(MyException.ExceptionType.INCORRECT_HEADER, "Header doesn't match");
+						throw new MyException(MyException.ExceptionType.INCORRECT_HEADER, "Header doesn't match");
+					}
 				}
+
+				if (state instanceof CsvStateCode) { // comparing if read file is of CsvStateCode class
+					if (((CsvStateCode) state).getSrNo() == 0 || ((CsvStateCode) state).getStateName() == null
+							|| ((CsvStateCode) state).getStateCode() == null) {
+
+						throw new MyException(MyException.ExceptionType.INCORRECT_HEADER, "Header doesn't match");
+					}
+				}
+
 			}
 		}
 
@@ -54,11 +61,11 @@ public class StateCensusAnalyser {
 			if (SAMPLE_CSV_FILE_PATH.contains(".csv")) {
 				throw new MyException(MyException.ExceptionType.FILE_NOT_FOUND, "File not found");
 			}
-			throw new MyException(MyException.ExceptionType.INCORRECT_TYPE, "Incorrect Type");
+			throw new MyException(MyException.ExceptionType.INCORRECT_TYPE, "Incorrect File Type");
 
 		} catch (RuntimeException e) {
 
-			throw new MyException(MyException.ExceptionType.DELEMETER_NOT_FOUND, "Incorrect Delimeter");
+			throw new MyException(MyException.ExceptionType.DELIMITER_NOT_FOUND, "Incorrect Delimiter");
 		} catch (IOException e) {
 			System.out.println(e);
 		}
